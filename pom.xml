@@ -1,4 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.co.farowl.asdl</groupId>
   <artifactId>asdl-tools</artifactId>
@@ -16,19 +20,25 @@
           <target/>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <version>4.3</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
-  	<dependency>
-  		<groupId>org.antlr</groupId>
-  		<artifactId>antlr4-maven-plugin</artifactId>
-  		<version>4.5.3</version>
-  		<type>maven-plugin</type>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.antlr</groupId>
-  		<artifactId>antlr4</artifactId>
-  		<version>4.5.3</version>
-  	</dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4</artifactId>
+      <version>4.5.3</version>
+    </dependency>
   </dependencies>
 </project>
