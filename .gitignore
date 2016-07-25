@@ -1,0 +1,9 @@
+# .gitignore
+
+# Project specific structure
+/target/
+
+# IDE Files
+/.classpath
+/.project
+/.settings/
