@@ -8,13 +8,20 @@ An AST is used as an intermediate representation of the input program inside a c
 Python is unusual in that the mechanism is made available to Python programs through the `ast` module in the standard library.
 Any string of Python source code can be converted to its AST.
 The set of data types used in the Python AST is specified using ASDL.
+
+Eli Bendersky has blogged about [Using ASDL to describe ASTs in compilers](http://eli.thegreenplace.net/2014/06/04/using-asdl-to-describe-asts-in-compilers),
+in relation to Python implementation,
+and the Python developer guide has [a section on the compiler](https://docs.python.org/devguide/compiler.html#abstract-syntax-trees-ast).
+
 This ASDL is compiled by a Python program `asdl-c.py`, during the building of CPython, and used to generate the C data structures that become the implementation of the `ast`modules.
 In Jython (the Java implementation of Python), a modified version of the CPython `asdl-c.py`is used to generate Java.
 The aim here is to use Java and modern compiler and code generation tools (ANTLR and StringTemplate) to accomplish something similar.
 
 ## About ASDL
 ASDL is described in "The Zephyr Abstract Syntax Description Language" [TR-554-97](https://www.cs.princeton.edu/research/techreps/TR-554-97) Wang, et al..
-There are tools in ML at [SourceForge ASDL](http://asdl.sourceforge.net/), but at the time of this writing, the project has seen no changes since August 2002.
+There are tools in ML at [SourceForge ASDL](http://asdl.sourceforge.net/),
+provided by Dan Wang,
+but at the time of this writing, the project has seen no changes since August 2002.
 
 ## Dialect of ASDL
 In applying ASDL to describing Python, the Python project made some additions to ASDL, and also omitted some features.
@@ -24,3 +31,4 @@ These differences are:
  * The `attributes` keyword is allowed for "product" types, not just for "sum" types.
  * Importing of one module by another is not supported.
 
+Because of these differences we don't claim that the supported dialect is "Zephyr ASDL".
