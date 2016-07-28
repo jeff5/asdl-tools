@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import uk.co.farowl.asdl.ASDLParser.ModuleContext;
+import uk.co.farowl.asdl.ast.AsdlTree;
 
 /**
  * A compiler for ASDL that may be invoked at at the command prompt.
@@ -49,6 +50,14 @@ public class Compile {
         }
 
         // We now have a parse tree in memory: dump it out.
-        System.out.println(tree.toStringTree(parser));
+        // System.out.println(tree.toStringTree(parser));
+
+        //   Using a visitor to the parse tree, construct an AST
+        CreateASTVisitor createASTVisitor = new CreateASTVisitor();
+        AsdlTree.Module module = createASTVisitor.visitModule(tree);
+
+        // Dump out the AST
+        System.out.println(module.toString());
+
     }
 }
