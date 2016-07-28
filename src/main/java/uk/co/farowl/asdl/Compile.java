@@ -53,8 +53,8 @@ public class Compile {
         // System.out.println(tree.toStringTree(parser));
 
         //   Using a visitor to the parse tree, construct an AST
-        CreateASTVisitor createASTVisitor = new CreateASTVisitor();
-        AsdlTree.Module module = createASTVisitor.visitModule(tree);
+        ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();
+        AsdlTree.Module module = astBuilder.visitModule(tree);
 
         // Dump out the AST
         System.out.println(module.toString());

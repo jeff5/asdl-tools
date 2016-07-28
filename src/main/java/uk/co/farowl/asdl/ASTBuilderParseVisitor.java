@@ -6,26 +6,19 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
-import uk.co.farowl.asdl.ASDLParser.AttributesContext;
-import uk.co.farowl.asdl.ASDLParser.ConstructorContext;
-import uk.co.farowl.asdl.ASDLParser.DefinitionContext;
-import uk.co.farowl.asdl.ASDLParser.FieldContext;
-import uk.co.farowl.asdl.ASDLParser.FieldsContext;
-import uk.co.farowl.asdl.ASDLParser.IdContext;
-import uk.co.farowl.asdl.ASDLParser.ModuleContext;
-import uk.co.farowl.asdl.ASDLParser.ProductContext;
-import uk.co.farowl.asdl.ASDLParser.SumContext;
-import uk.co.farowl.asdl.ASDLParser.TypeContext;
+import uk.co.farowl.asdl.ASDLParser.*;
 import uk.co.farowl.asdl.ast.AsdlTree;
-import uk.co.farowl.asdl.ast.AsdlTree.Constructor;
-import uk.co.farowl.asdl.ast.AsdlTree.Definition;
-import uk.co.farowl.asdl.ast.AsdlTree.Field;
+import uk.co.farowl.asdl.ast.AsdlTree.*;
 import uk.co.farowl.asdl.ast.AsdlTree.Field.Cardinality;
-import uk.co.farowl.asdl.ast.AsdlTree.Module;
-import uk.co.farowl.asdl.ast.AsdlTree.Product;
-import uk.co.farowl.asdl.ast.AsdlTree.Sum;
 
-public class CreateASTVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
+/**
+ * Visitor to the ASDL parse tree that builds and AST representing the user's ASDL. The classes of
+ * the parse tree, and the parser itself, were generated from the grammar of ASDL by ANTLR. The AST
+ * we generate here (consisting of {@link AsdlTree} nodes) encapsulates the meaning of the user's
+ * source, and will be used to generate source code implementing the data structures described by
+ * the user's source.
+ */
+public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
 
     @Override
     public Module visitModule(ModuleContext ctx) {
