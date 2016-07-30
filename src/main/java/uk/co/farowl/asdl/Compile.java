@@ -3,9 +3,13 @@ package uk.co.farowl.asdl;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.stringtemplate.v4.ST;
+import org.stringtemplate.v4.STGroup;
+import org.stringtemplate.v4.STGroupFile;
 
 import uk.co.farowl.asdl.ASDLParser.ModuleContext;
 import uk.co.farowl.asdl.ast.AsdlTree;
@@ -52,12 +56,19 @@ public class Compile {
         // We now have a parse tree in memory: dump it out.
         // System.out.println(tree.toStringTree(parser));
 
-        //   Using a visitor to the parse tree, construct an AST
+        // Using a visitor to the parse tree, construct an AST
         ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();
         AsdlTree.Module module = astBuilder.visitModule(tree);
 
         // Dump out the AST
-        System.out.println(module.toString());
+        // System.out.println(module.toString());
 
+        // Emit reconstructed source using StringTemplate
+        URL url = AsdlTree.class.getResource("ASDL.stg");
+        STGroup stg = new STGroupFile(url, "UTF-8", '<', '>');
+        ST st = stg.getInstanceOf("emitModule");
+        st.add("module", module);
+        String source =  st.render();
+        System.out.println(source);
     }
 }

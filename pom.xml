@@ -9,6 +9,9 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>ASDL Tools</name>
   <description>Compiler and code generator for a dialect of Abstract Syntax Description Language</description>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
     <plugins>
@@ -41,8 +44,13 @@
   <dependencies>
     <dependency>
       <groupId>org.antlr</groupId>
-      <artifactId>antlr4</artifactId>
+      <artifactId>antlr4-runtime</artifactId>
       <version>4.5.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>ST4</artifactId>
+      <version>4.0.8</version>
     </dependency>
   </dependencies>
 </project>
