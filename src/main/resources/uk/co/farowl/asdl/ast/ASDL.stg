@@ -2,15 +2,15 @@
  * Templates for the (re)generation of source ASDL from the ASDL AST.
  */
 
+// Emit the source corresponding to any Node type in the AsdlTree
+emit(node) ::= "<(_emit(node))(node)>"
+_emit(node) ::= "emit<node.class.simpleName>"
+
 // Called to emit source for a Module module
 emitModule(module) ::= <<
 module <module.name> {
-    <module.defs: emitDefinition(); separator="\n">
+    <module.defs: emit(); separator="\n">
 >>
-
-// Definition is abstract: choose according to concrete class.
-emitDefinition(def) ::= "<(_emit(def))(def)>"
-_emit(d) ::= "emit<d.class.simpleName>"
 
 // Called to emit source for a Sum sum
 emitSum(sum) ::= <<

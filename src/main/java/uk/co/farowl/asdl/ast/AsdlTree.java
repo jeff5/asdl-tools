@@ -4,9 +4,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
+import uk.co.farowl.asdl.ASDLParser;
+import uk.co.farowl.asdl.ASTBuilderParseVisitor;
+
 /**
  * This class defines the nodes in abstract syntax trees that represent the (partially) compiled
- * form of ASDL source. Any such node may be thought of as a tree, since an instance cannot exist
+ * form of ASDL source. Any such node may be thought of as a sub-tree, since an instance cannot exist
  * without its complement of child nodes. From these node classes the AST representing an instance
  * of a specification in ASDL may be composed. These classes support traversal of the AST by objects
  * that implement AdslTree#{@link Visitor}.
@@ -15,8 +20,24 @@ import java.util.List;
  * compiler. Do not confuse these AST node classes with the ones the compiler generates from the
  * ASDL source.
  */
-public abstract class AsdlTree {
+public class AsdlTree {
 
+    /** The root node of the AST. */
+    public final Node root;
+
+    public AsdlTree(ParserRuleContext ctx){
+        // Using a visitor to the parse tree, construct an AST
+        ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();
+        root = ctx.accept(astBuilder);
+    }
+
+    public AsdlTree(ASDLParser.ModuleContext module){
+        // Using a visitor to the parse tree, construct an AST
+        ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();
+        root = astBuilder.visitModule(module);
+    }
+
+    /** All the nodes of the ASDL AST implement this interface. */
     public interface Node {
 
         /**
