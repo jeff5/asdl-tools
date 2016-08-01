@@ -37,6 +37,11 @@ public class AsdlTree {
         root = astBuilder.visitModule(module);
     }
 
+    @Override
+    public String toString() {
+        return root.toString();
+    }
+
     /** All the nodes of the ASDL AST implement this interface. */
     public interface Node {
 
