@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-
 import uk.co.farowl.asdl.ASDLParser;
 import uk.co.farowl.asdl.ASTBuilderParseVisitor;
 
@@ -22,15 +20,10 @@ import uk.co.farowl.asdl.ASTBuilderParseVisitor;
  */
 public class AsdlTree {
 
-    /** The root node of the AST. */
-    public final Node root;
+    /** The root node of the AST is always a {@link #Module}. */
+    public final Module root;
 
-    public AsdlTree(ParserRuleContext ctx){
-        // Using a visitor to the parse tree, construct an AST
-        ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();
-        root = ctx.accept(astBuilder);
-    }
-
+    /** Construct the AST from the result of parsing an ASDL module. */
     public AsdlTree(ASDLParser.ModuleContext module){
         // Using a visitor to the parse tree, construct an AST
         ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();

@@ -1,6 +1,8 @@
 package uk.co.farowl.asdl.ast;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 import java.util.List;
 import java.util.function.Function;
@@ -95,29 +97,34 @@ public class AsdlTreeTest {
     /** Parse a Field to an AST. */
     @Test
     public void testField() {
-        ASDLParser parser = getParser("  -- comment\n\n  int     name  ");
-        AsdlTree tree = new AsdlTree(parser.field());
-        assertEquals("int name", tree.toString());
+        String source = wrapField("int     name  ");
+        AsdlTree ast = getAST(source);
+        assertThat(ast.toString(), containsString("int name"));
     }
 
     /** Parse a Field to an AST. */
     @Test
     public void testField2() {
-        ASDLParser parser = getParser("  -- comment\n\n  thing     ?name  ");
-        AsdlTree tree = new AsdlTree(parser.field());
-        assertEquals("thing? name", tree.toString());
+        String source = wrapField("thing     ?name  ");
+        AsdlTree ast = getAST(source);
+        assertThat(ast.toString(), containsString("thing? name"));
     }
 
     /** Parse a Field to an AST. */
     @Test
     public void testField3() {
-        ASDLParser parser = getParser("  -- comment\n\n  string  *    name  ");
-        AsdlTree tree = new AsdlTree(parser.field());
-        assertEquals("string* name", tree.toString());
+        String source = wrapField("string  *    name  ");
+        AsdlTree ast = getAST(source);
+        assertThat(ast.toString(), containsString("string* name"));
+    }
+
+    /** Wrap a field declaration in a product in a module for testing. */
+    private String wrapField(String fieldDecl) {
+        return "module Test {\n-- cmnt\ntest = -- cmnt2\n(" + fieldDecl + ")\n}";
     }
 
     private Module getModule(String source) {
-        return (Module)(getAST(source).root);
+        return getAST(source).root;
     }
 
     private ASDLParser getParser(String src) {
