@@ -1,18 +1,16 @@
 package uk.co.farowl.asdl.ast;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import uk.co.farowl.asdl.ASDLParser;
 import uk.co.farowl.asdl.ASTBuilderParseVisitor;
 
 /**
  * This class defines the nodes in abstract syntax trees that represent the (partially) compiled
- * form of ASDL source. Any such node may be thought of as a sub-tree, since an instance cannot exist
- * without its complement of child nodes. From these node classes the AST representing an instance
- * of a specification in ASDL may be composed. These classes support traversal of the AST by objects
- * that implement AdslTree#{@link Visitor}.
+ * form of ASDL source. Any such node may be thought of as a sub-tree, since an instance cannot
+ * exist without its complement of child nodes. From these node classes the AST representing an
+ * instance of a specification in ASDL may be composed. These classes support traversal of the AST
+ * by objects that implement AdslTree#{@link Visitor}.
  * <p>
  * ASDL is a language for describing ASTs and trees composed of these nodes are part of its
  * compiler. Do not confuse these AST node classes with the ones the compiler generates from the
@@ -24,7 +22,7 @@ public class AsdlTree {
     public final Module root;
 
     /** Construct the AST from the result of parsing an ASDL module. */
-    public AsdlTree(ASDLParser.ModuleContext module){
+    public AsdlTree(ASDLParser.ModuleContext module) {
         // Using a visitor to the parse tree, construct an AST
         ASTBuilderParseVisitor astBuilder = new ASTBuilderParseVisitor();
         root = astBuilder.visitModule(module);
@@ -80,8 +78,7 @@ public class AsdlTree {
     /**
      * Class representing one definition, which may be a sum or product type. The facility to
      * specify attributes on a product type seems to be a Python addition, used as a notational
-     * convenience. In EBNF:
-     * <pre>
+     * convenience. In EBNF: <pre>
      * definition : TypeId '=' type ;
      * type : product | sum ;
      * product : fields attributes? ;
@@ -106,8 +103,7 @@ public class AsdlTree {
     }
 
     /**
-     * Class representing one sum-type definition. In EBNF:
-     * <pre>
+     * Class representing one sum-type definition. In EBNF: <pre>
      * sum : constructor ( '|' constructor )* attributes? ;
      * constructor : ConstructorId fields? ;
      * attributes : Attributes fields ;
@@ -148,10 +144,8 @@ public class AsdlTree {
     }
 
     /**
-     * Class representing one product-type definition. The facility to
-     * specify attributes on a product type seems to be a Python addition, used as a notational
-     * convenience. In EBNF:
-     * <pre>
+     * Class representing one product-type definition. The facility to specify attributes on a
+     * product type seems to be a Python addition, used as a notational convenience. In EBNF: <pre>
      * product : fields attributes? ;
      * constructor : ConstructorId fields? ;
      * attributes : Attributes fields ;
@@ -227,6 +221,14 @@ public class AsdlTree {
 
         public final boolean isSequence() {
             return cardinality == Cardinality.SEQUENCE;
+        }
+
+        // According to CPython, built-in types are:
+        private static final Set<String> BUILTIN = new HashSet<String>(
+                Arrays.asList("identifier", "string", "bytes", "int", "object", "singleton"));
+
+        public final boolean isNodeType() {
+            return !BUILTIN.contains(typeName);
         }
 
         @Override

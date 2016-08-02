@@ -1,5 +1,5 @@
 module simple {
-    a = (int x, int* y) attributes (string*)
+    a = (int x, int* y) attributes (string*dummy)
     b = A | B
     c = Test1(a x, b y)
       | Test2(a z)

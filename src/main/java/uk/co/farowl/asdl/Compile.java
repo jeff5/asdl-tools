@@ -49,7 +49,10 @@ public class Compile {
         compiler.buildAST();
 
         // Dump out the AST
-        System.out.println(compiler.emitASDL());
+        //System.out.println(compiler.emitASDL());
+
+        // Dump out the Java
+        System.out.println(compiler.emitJava());
     }
 
     String inputName;
@@ -98,6 +101,17 @@ public class Compile {
     /** Emit reconstructed source from enclosed AST using StringTemplate */
     public String emitASDL() {
         return emitASDL(ast.root);
+    }
+
+    /** Emit Java from enclosed AST using StringTemplate */
+    public String emitJava() {
+        URL url = AsdlTree.class.getResource("Java.stg");
+        STGroup stg = new STGroupFile(url, "UTF-8", '<', '>');
+        ST st = stg.getInstanceOf("ASDFile");
+        String toolName = getClass().getSimpleName();
+        st.addAggr("command.{tool, file}", toolName, inputName);
+        st.add("mod", ast.root);
+        return st.render();
     }
 
     /** Emit reconstructed source from arbitrary sub-tree using StringTemplate */
