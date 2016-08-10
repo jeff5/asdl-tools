@@ -5,5 +5,20 @@
 
 # IDE Files
 /.classpath
+/.externalToolBuilders/
 /.project
 /.settings/
+/.pydevproject
+
+# Droppings
+*.class
+*.pyc
+*.pyd
+*.pyo
+*.orig
+*.rej
+*.swp
+*.tmp
+\#*
+*~
+
