@@ -3,6 +3,7 @@ package uk.co.farowl.asdl;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.URL;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
@@ -18,62 +19,186 @@ import uk.co.farowl.asdl.ast.AsdlTree;
  * A compiler for ASDL that may be invoked at at the command prompt.
  */
 public class Compile {
+
     // TODO JUnit tests
 
     /**
-     * Program that may be invoked as:<pre>
+     * Program that may be invoked as:
+     *
+     * <pre>
      * java -cp ... uk.co.farowl.asdl.Compile filename
-     *</pre> At present, this just dumps the parse tree.
+     *</pre>
+     *
+     * At present, this just dumps the parse tree.
      *
      * @param args
      * @throws IOException
      */
     public static void main(String[] args) throws IOException {
 
-        String inputFile;
-        Compile compiler;
-        ANTLRInputStream input;
+        // Parse the command line
+        Compile.Options options = new Compile.Options(args);
 
-        // Open the file named on the command line
-        if (args.length > 0) {
-            inputFile = args[0];
-            InputStream is = new FileInputStream(inputFile);
-            input = new ANTLRInputStream(is);
-        } else {
-            inputFile = "<stdin>";
-            input = new ANTLRInputStream(System.in);
+        // Help if asked (or if there was an error).
+        if (options.commandLineError != null) {
+            options.giveHelp();
+            System.err.println(options.commandLineError);
+            System.exit(1);
         }
-        compiler = new Compile();
 
-        compiler.buildParseTree(input, inputFile);
-        compiler.buildAST();
+        else if (options.giveHelp) {
+            options.giveHelp();
 
-        // Dump out the AST
-        //System.out.println(compiler.emitASDL());
+        } else {
+            // Options ok apparently. Let's get on with it.
+            InputStream inputStream = new FileInputStream(options.inputName);
+            ANTLRInputStream input = new ANTLRInputStream(inputStream);
 
-        // Dump out the Java
-        System.out.println(compiler.emitJava());
+            Compile compiler = new Compile(options, input);
+            compiler.buildParseTree();
+            inputStream.close();
+
+            compiler.buildAST();
+            if (options.dumpASDL) {
+                System.out.println(compiler.emitASDL());
+            }
+
+            // Output generated code as specified (possibly to stdout)
+            PrintStream outputStream = System.out;
+            if (options.outputName != null) {
+                outputStream = new PrintStream(options.outputName);
+            }
+            if (options.outputType == OutputType.JAVA) {
+                outputStream.println(compiler.emitJava());
+            }
+            if (outputStream != System.out) {
+                outputStream.close();
+            }
+        }
     }
 
-    String inputName;
+    private enum OutputType {
+        NONE, JAVA
+    }
+
+    private static class Options {
+
+        /** If not null, there was an error and this is the description. */
+        String commandLineError;
+        boolean giveHelp;
+        String inputName;
+        OutputType outputType = OutputType.NONE;
+        private boolean dumpASDL;
+        String outputName;
+
+        /** Construct from command-line arguments. */
+        Options(String[] args) {
+            parseCommand(args);
+        }
+
+        /**
+         * Parse command arguments to local variables.
+         *
+         * @return true iff the program should run the compiler. (False=give help instead.)
+         */
+        private void parseCommand(String[] args) {
+            int files = 0;
+            argloop : for (String arg : args) {
+                if (arg.length() >= 2 && arg.charAt(0) == '-') {
+                    // It's a switch
+                    switch (arg) {
+                        case "-h":
+                            giveHelp = true;
+                            break;
+                        case "-a":
+                            dumpASDL = true;
+                            break;
+                        case "-j":
+                            outputType = OutputType.JAVA;
+                            break;
+                        default:
+                            setError("Unknown option: " + arg);
+                            break argloop;
+                    }
+                } else {
+                    // It's a file
+                    switch (files++) {
+                        case 0:
+                            inputName = arg;
+                            break;
+                        case 1:
+                            outputName = arg;
+                            break;
+                        default:
+                            setError("Spurious file name: " + arg);
+                            break argloop;
+                    }
+                }
+            }
+
+            // Consistency checks
+            if (outputType == OutputType.NONE && outputName != null) {
+                setError("Cannot specify <outfile> when not generating code");
+            }
+
+            if (outputType == OutputType.NONE && !giveHelp && !dumpASDL) {
+                setError("No actions specified");
+            }
+
+            if (inputName == null && !giveHelp) {
+                setError("Must specify <infile> when generating code");
+            }
+
+            // If there was an error, give help unasked.
+            giveHelp |= error();
+        }
+
+        /** Declare there was an error, but do not overwrite existing error. */
+        void setError(String msg) {
+            if (!error() && msg != null) {
+                commandLineError = msg;
+            }
+        }
+
+        /** True iff an error has been declared. */
+        boolean error() {
+            return commandLineError != null;
+        }
+
+        void giveHelp() {
+            System.out.println("Arguments:");
+            System.out.println(" ...    -ahj <infile> <outfile>");
+            System.out.println("-a  Output ASDL equivalent to <infile> to stdout");
+            System.out.println("-h  Output this help and stop");
+            System.out.println("-j  Output Java to <outfile>");
+        }
+    }
+
+    Options options;
     ANTLRInputStream input;
     ModuleContext parseTree;
     AsdlTree ast;
 
     /**
-     * Compile the source (actually an ANTLR input stream) into a new parse tree. This source must
-     * represent one complete ASDL module. We require an <code>ANTLRInputStream</code> rather than
-     * support several different source types (<code>String</code>, <code>InputStream</code>,
-     * <code>Reader</code>, etc.).
+     * Create a compiler attached to the given source stream. This source must represent one
+     * complete ASDL module. We require an <code>ANTLRInputStream</code> rather than support several
+     * different source types (<code>String</code>, <code>InputStream</code>, <code>Reader</code>,
+     * etc.).
      *
-     * @param input representing the source module: client may close on return
-     * @param inputName name to use in messages
+     * @param options specifying input name etc.
+     * @param input representing the source module
+     */
+    public Compile(Options options, ANTLRInputStream input) {
+        this.options = options;
+        this.input = input;
+    }
+
+    /**
+     * Compile the source (actually an ANTLR input stream) into a new parse tree.
+     *
      * @throws IOException from reading the input
      */
-    public void buildParseTree(ANTLRInputStream input, String inputName) throws IOException {
-        this.input = input;
-        this.inputName = (inputName != null) ? inputName : "<input>";
-        this.ast = null;
+    public void buildParseTree() throws IOException {
 
         // Wrap the input in a Lexer
         ASDLLexer lexer = new ASDLLexer(input);
@@ -109,7 +234,7 @@ public class Compile {
         STGroup stg = new STGroupFile(url, "UTF-8", '<', '>');
         ST st = stg.getInstanceOf("ASDFile");
         String toolName = getClass().getSimpleName();
-        st.addAggr("command.{tool, file}", toolName, inputName);
+        st.addAggr("command.{tool, file}", toolName, options.inputName);
         st.add("mod", ast.root);
         return st.render();
     }
