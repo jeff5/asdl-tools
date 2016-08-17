@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -14,6 +16,9 @@ import org.stringtemplate.v4.STGroupFile;
 
 import uk.co.farowl.asdl.ASDLParser.ModuleContext;
 import uk.co.farowl.asdl.ast.AsdlTree;
+import uk.co.farowl.asdl.code.CodeTree;
+import uk.co.farowl.asdl.code.CodeTree.Product;
+import uk.co.farowl.asdl.code.Scope;
 
 /**
  * A compiler for ASDL that may be invoked at at the command prompt.
@@ -62,6 +67,8 @@ public class Compile {
             if (options.dumpASDL) {
                 System.out.println(compiler.emitASDL());
             }
+
+            compiler.buildCodeTree();
 
             // Output generated code as specified (possibly to stdout)
             PrintStream outputStream = System.out;
@@ -178,6 +185,8 @@ public class Compile {
     ANTLRInputStream input;
     ModuleContext parseTree;
     AsdlTree ast;
+    CodeTree.Module globalModule;
+    CodeTree code;
 
     /**
      * Create a compiler attached to the given source stream. This source must represent one
@@ -228,6 +237,38 @@ public class Compile {
         return emitASDL(ast.root);
     }
 
+    /**
+     * Build an AST from the source already parsed by
+     * {@link #buildParseTree(ANTLRInputStream, String)}.
+     */
+    public void buildCodeTree() {
+        if (ast == null) {
+            throw new java.lang.IllegalStateException("No AST has been built");
+        }
+
+        // Set up the global scope enclosing the module
+        globalModule = new CodeTree.Module("", null); // Nameless and no enclosing scope
+        Scope<CodeTree.Definition> globalTypes = globalModule.scope;
+
+        // Name the built-in types (without a particular language binding)
+        for (String type : asdlTypes) {
+            defineGlobal(type);
+        }
+
+        // Compile the code tree from the AST
+        code = new CodeTree(globalTypes, ast);
+        // System.out.println(code.root.toString());
+    }
+
+    private static List<String> asdlTypes =
+            Arrays.asList("identifier", "string", "bytes", "int", "object", "singleton");
+
+    /** Declare a built-in type as a Definition in {@link #globalModule}. */
+    private void defineGlobal(String typeName) {
+        CodeTree.Definition def = new Product(typeName, globalModule, 0, 0);
+        globalModule.scope.define(typeName, def);
+    }
+
     /** Emit Java from enclosed AST using StringTemplate */
     public String emitJava() {
         URL url = AsdlTree.class.getResource("Java.stg");
@@ -235,7 +276,8 @@ public class Compile {
         ST st = stg.getInstanceOf("ASDFile");
         String toolName = getClass().getSimpleName();
         st.addAggr("command.{tool, file}", toolName, options.inputName);
-        st.add("mod", ast.root);
+        // st.add("mod", ast.root);
+        st.add("mod", code.root);
         return st.render();
     }
 

@@ -39,7 +39,7 @@ public abstract class <mod.name>AST {
      * All definitions in this module implement this interface to
      * support a generic approach to walking the tree.
      */
-    public interface Node{
+    public interface Node {
         /**
          * Allows a \<code>Visitor\</code> to visit this \<code>Node\</code>
          * without knowing its exact type. The \<code>Node\</code> dispatches
@@ -57,15 +57,15 @@ public abstract class <mod.name>AST {
         }
     }
 
-    <mod.defs: definition(mod); separator="\n\n">
+    <mod.defs: definition(); separator="\n\n">
 
     public interface Visitor\<T> {
-        <mod.defs: definitionVisit(mod); separator="\n">
+        <mod.defs: definitionVisit(); separator="\n">
     }
 }
 >>
 
-definition(def, mod) ::= <<
+definition(def) ::= <<
 <if(def.sum)>
 <if(def.simple)><simpleSumDef(def)>
 <else><sumDef(def)>
@@ -91,7 +91,7 @@ public static class <prod.name> implements Node {
 >>
 
 constructor(name, args) ::=<<
-<constructorHead(name, args)>{
+<constructorHead(name, args)> {
     <args: memberInitStmt(); separator="\n">
 }
 >>
@@ -106,11 +106,11 @@ memberDeclaration(field) ::= <%
 // Choose object or collection type according to cardinality
 declaredType(field) ::= <%
 <if(field.optional)>
-    <asdlTypeToJavaObjectType.(field.typeName)>
+    <asdlTypeToJavaObjectType.(field.type.name)>
 <elseif(field.sequence)>
-    java.util.List\<<asdlTypeToJavaObjectType.(field.typeName)>>
+    java.util.List\<<asdlTypeToJavaObjectType.(field.type.name)>>
 <else>
-    <asdlTypeToJava.(field.typeName)>
+    <asdlTypeToJava.(field.type.name)>
 <endif>
 %>
 
@@ -127,7 +127,7 @@ public java.util.Collection\<Node> children() {
 
 childrenAdd(field) ::= <%
 <if(!field.nodeType)>
-    // <field.name> has non-Node type <field.type>
+    // <field.name> has non-Node type <field.type.name>
 <elseif(field.optional)>
     if (<field.name>!=null) list.add(<field.name>);
 <elseif(field.sequence)>
@@ -183,7 +183,7 @@ constructorHead(name, args) ::= <%
 argDecl(field) ::= "<declaredType(field)> <field.name>"
 
 // Generate visit method(s) for a Definition
-definitionVisit(def, mod) ::= <<
+definitionVisit(def) ::= <<
 <if(def.sum)>
 <if(def.simple)><simpleSumDefVisit(def)>
 <else><sumDefVisit(def)>

@@ -2,6 +2,7 @@
 
 # Project specific structure
 /target/
+/temp/
 
 # IDE Files
 /.classpath
@@ -12,11 +13,13 @@
 
 # Droppings
 *.class
+*.log
 *.pyc
 *.pyd
 *.pyo
 *.orig
 *.rej
+*.saved
 *.swp
 *.tmp
 \#*
