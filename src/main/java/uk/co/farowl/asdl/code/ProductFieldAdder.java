@@ -27,7 +27,8 @@ class ProductFieldAdder extends FieldAdder {
      * @param products to revisit during {@link #addFields()}.
      * @param handler for semantic errors (e.g. repeat definitions of fields)
      */
-    ProductFieldAdder(Module module, Map<AsdlTree.Product, Product> products, ErrorHandler handler) {
+    ProductFieldAdder(Module module, Map<AsdlTree.Product, Product> products,
+            ErrorHandler handler) {
         super(module, handler);
         this.products = products;
     }
@@ -45,6 +46,8 @@ class ProductFieldAdder extends FieldAdder {
 
     @Override
     public Product visitProduct(AsdlTree.Product product) {
+        // Collect attribute names and check for duplicates
+        setAttributeNames(product.attributes);
         // Iterate over the attributes adding them as fields to the target Product
         int attributeIndex = 0;
         for (AsdlTree.Field a : product.attributes) {
@@ -52,7 +55,9 @@ class ProductFieldAdder extends FieldAdder {
         }
         // Iterate over the members adding them as fields to the target Product
         int memberIndex = 0;
+        memberNames.clear();
         for (AsdlTree.Field m : product.members) {
+            checkMemberName(m);
             currentProduct.members[memberIndex++] = visitField(m);
         }
         return currentProduct;

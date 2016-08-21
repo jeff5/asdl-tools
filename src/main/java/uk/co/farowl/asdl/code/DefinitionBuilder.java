@@ -1,6 +1,6 @@
 package uk.co.farowl.asdl.code;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import uk.co.farowl.asdl.ast.AsdlTree;
@@ -23,9 +23,9 @@ import uk.co.farowl.asdl.code.CodeTree.Sum;
 class DefinitionBuilder implements AsdlTree.Visitor<Definition> {
 
     /** Collect the <code>Sum</code> (AST and code) objects to revisit in the next phase. */
-    final Map<AsdlTree.Sum, Sum> sums = new HashMap<>();
+    final Map<AsdlTree.Sum, Sum> sums = new LinkedHashMap<>();
     /** Collect the <code>Product</code> (AST and code) objects to revisit in the next phase. */
-    final Map<AsdlTree.Product, Product> products = new HashMap<>();
+    final Map<AsdlTree.Product, Product> products = new LinkedHashMap<>();
     /** The module to which this visitor is adding definitions. */
     private Module module;
     /** The {@link Scope} within which this <code>DefinitionBuilder</code> creates types. */

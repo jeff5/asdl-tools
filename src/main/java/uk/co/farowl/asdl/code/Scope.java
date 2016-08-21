@@ -69,6 +69,10 @@ public class Scope<T> {
         public boolean isDefined() {
             return def != null;
         }
+        /** Return the definition of this <code>Symbol</code>. */
+        public T definitionOrNull() {
+            return def;
+        }
     }
 
     /**
@@ -112,7 +116,6 @@ public class Scope<T> {
         }
     }
 
-    // TODO Consider resolveOrNull() while simple resolve() throws if not found.
     /**
      * Find the <code>Symbol</code> corresponding to the name in this or an enclosing
      * <code>Scope</code>. The <code>Symbol</code> may be undefined at this time (in the sense of

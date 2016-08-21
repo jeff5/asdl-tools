@@ -242,7 +242,6 @@ public class CodeTree {
          * @param memberCount number of members possessed
          */
         public Constructor(String name, int memberCount) {
-            // XXX Should there be a symbol table of constructors?
             this.name = new Name(name);
             this.members = new Field[memberCount];
         }
@@ -267,7 +266,6 @@ public class CodeTree {
         public Field(Definition type, Cardinality cardinality, String name) {
             this.type = type;
             this.cardinality = cardinality;
-            // XXX Should there be a symbol table of field names?
             this.name = new Name(name);
         }
 

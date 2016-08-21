@@ -12,7 +12,6 @@ import org.antlr.v4.runtime.Token;
 
 import uk.co.farowl.asdl.ASDLParser;
 import uk.co.farowl.asdl.ASDLParser.IdContext;
-import uk.co.farowl.asdl.ast.AsdlTree.SemanticError;
 import uk.co.farowl.asdl.ASTBuilderParseVisitor;
 
 /**
@@ -94,8 +93,16 @@ public abstract class AsdlTree {
     }
 
     public class Duplicate extends SemanticError {
+        /** Signal that attribute/member 'name' is a duplicate. */
         public Duplicate(String typeOfThing, String name) {
             super(String.format("duplicate %s name '%s'", typeOfThing, name));
+        }
+    }
+
+    public class Shadow extends SemanticError {
+        /** Signal that member 'name' clashes with an attribute of the same name. */
+        public Shadow(String name) {
+            super(String.format("member '%s' clashes with an attribute of the same name", name));
         }
     }
 
