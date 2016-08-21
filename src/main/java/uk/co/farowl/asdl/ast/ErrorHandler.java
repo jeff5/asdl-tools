@@ -5,6 +5,7 @@ public interface ErrorHandler {
 
     /** Report an error, specified as an exception. */
     void report(AsdlTree.SemanticError se);
+
     /** Return cumulative total of errors reported. */
     int getNumberOfErrors();
 }

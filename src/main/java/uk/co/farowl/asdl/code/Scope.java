@@ -51,7 +51,8 @@ public class Scope<T> {
         }
 
         /**
-         * Define this <code>Symbol</code> and return it. Return <code>null</code> if already defined.
+         * Define this <code>Symbol</code> and return it. Return <code>null</code> if already
+         * defined.
          *
          * @param definition the new definition
          * @return this <code>Symbol</code> (for convenience chaining calls, etc.)
@@ -69,6 +70,7 @@ public class Scope<T> {
         public boolean isDefined() {
             return def != null;
         }
+
         /** Return the definition of this <code>Symbol</code>. */
         public T definitionOrNull() {
             return def;

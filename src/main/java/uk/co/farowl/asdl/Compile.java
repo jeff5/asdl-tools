@@ -309,6 +309,7 @@ public class Compile {
     /**
      * Build an AST from the source already parsed by
      * {@link #buildParseTree(ANTLRInputStream, String)}.
+     *
      * @throws ASDLErrors
      */
     public void buildCodeTree() throws ASDLErrors {

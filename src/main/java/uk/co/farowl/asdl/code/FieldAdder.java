@@ -25,7 +25,7 @@ abstract class FieldAdder implements AsdlTree.Visitor<Node> {
     /** Set of attribute names in the current <code>Sum</code> to check members against. */
     protected HashSet<String> attributeNames = new HashSet<>();
     /** Set of member names in the current <code>Constructor</code> or <code>Product</code>. */
-    protected HashSet<String> memberNames= new HashSet<>();
+    protected HashSet<String> memberNames = new HashSet<>();
 
     /**
      * Construct a visitor to ASDL trees for the purpose of adding fields to the specified

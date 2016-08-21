@@ -74,7 +74,8 @@ public abstract class AsdlTree {
 
     /** Exception base class representing a semantic error blaming this node. */
     public class SemanticError extends Exception {
-       /** Parse tree context (not null). */
+
+        /** Parse tree context (not null). */
         public final ParserRuleContext context;
 
         public SemanticError(String message) {
@@ -85,14 +86,14 @@ public abstract class AsdlTree {
         @Override
         public String getMessage() {
             Token start = context.getStart();
-            String message =
-                    String.format("line %d:%d: %s",
-                            start.getLine(), start.getCharPositionInLine(), super.getMessage());
+            String message = String.format("line %d:%d: %s", start.getLine(),
+                    start.getCharPositionInLine(), super.getMessage());
             return message;
         }
     }
 
     public class Duplicate extends SemanticError {
+
         /** Signal that attribute/member 'name' is a duplicate. */
         public Duplicate(String typeOfThing, String name) {
             super(String.format("duplicate %s name '%s'", typeOfThing, name));
@@ -100,6 +101,7 @@ public abstract class AsdlTree {
     }
 
     public class Shadow extends SemanticError {
+
         /** Signal that member 'name' clashes with an attribute of the same name. */
         public Shadow(String name) {
             super(String.format("member '%s' clashes with an attribute of the same name", name));

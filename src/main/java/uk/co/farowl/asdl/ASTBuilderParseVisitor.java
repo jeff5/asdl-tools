@@ -16,10 +16,10 @@ import uk.co.farowl.asdl.ASDLParser.ProductContext;
 import uk.co.farowl.asdl.ASDLParser.SumContext;
 import uk.co.farowl.asdl.ASDLParser.TypeContext;
 import uk.co.farowl.asdl.ast.AsdlTree;
+import uk.co.farowl.asdl.ast.AsdlTree.Cardinality;
 import uk.co.farowl.asdl.ast.AsdlTree.Constructor;
 import uk.co.farowl.asdl.ast.AsdlTree.Definition;
 import uk.co.farowl.asdl.ast.AsdlTree.Field;
-import uk.co.farowl.asdl.ast.AsdlTree.Cardinality;
 import uk.co.farowl.asdl.ast.AsdlTree.Module;
 import uk.co.farowl.asdl.ast.AsdlTree.Product;
 import uk.co.farowl.asdl.ast.AsdlTree.Sum;
@@ -32,24 +32,6 @@ import uk.co.farowl.asdl.ast.AsdlTree.Sum;
  * the user's source.
  */
 public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree> {
-
-// /** The source file for which we are building the AST (mostly for error messages). */
-// public final String source;
-
-//    /** The AST we are building. */
-//    private final AsdlTree ast;
-
-// public ASTBuilderParseVisitor(String source) {
-// this.ast = new AsdlTree(source);
-// }
-
-//    public ASTBuilderParseVisitor(ANTLRInputStream input) {
-//        this.ast = new AsdlTree(input);
-//    }
-
-//    public AsdlTree.Module build(ASDLParser.ModuleContext module) {
-//        return visitModule(module);
-//    }
 
     @Override
     public Module visitModule(ModuleContext ctx) {

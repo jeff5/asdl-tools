@@ -13,7 +13,11 @@ import org.junit.Test;
 
 import uk.co.farowl.asdl.ASDLLexer;
 import uk.co.farowl.asdl.ASDLParser;
-import uk.co.farowl.asdl.ast.AsdlTree.*;
+import uk.co.farowl.asdl.ast.AsdlTree.Constructor;
+import uk.co.farowl.asdl.ast.AsdlTree.Definition;
+import uk.co.farowl.asdl.ast.AsdlTree.Module;
+import uk.co.farowl.asdl.ast.AsdlTree.Product;
+import uk.co.farowl.asdl.ast.AsdlTree.Sum;
 
 /**
  * Compile modules and check elements of their ASTs explicitly.

@@ -63,6 +63,7 @@ class DefinitionBuilder implements AsdlTree.Visitor<Definition> {
     /**
      * Visit an AST Sum and create a {@link CodeTree.Sum} definition in the module symbol table. Add
      * the new Sum to {@link #sums} for later processing.
+     *
      * @throws Duplicate if the type name is defined a second time in this scope
      */
     @Override
