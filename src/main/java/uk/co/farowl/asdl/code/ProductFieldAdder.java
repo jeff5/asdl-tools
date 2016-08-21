@@ -3,6 +3,7 @@ package uk.co.farowl.asdl.code;
 import java.util.Map;
 
 import uk.co.farowl.asdl.ast.AsdlTree;
+import uk.co.farowl.asdl.ast.ErrorHandler;
 import uk.co.farowl.asdl.code.CodeTree.Constructor;
 import uk.co.farowl.asdl.code.CodeTree.Module;
 import uk.co.farowl.asdl.code.CodeTree.Product;
@@ -24,9 +25,10 @@ class ProductFieldAdder extends FieldAdder {
      *
      * @param module within which to resolve type names.
      * @param products to revisit during {@link #addFields()}.
+     * @param handler for semantic errors (e.g. repeat definitions of fields)
      */
-    ProductFieldAdder(Module module, Map<AsdlTree.Product, Product> products) {
-        super(module);
+    ProductFieldAdder(Module module, Map<AsdlTree.Product, Product> products, ErrorHandler handler) {
+        super(module, handler);
         this.products = products;
     }
 

@@ -6,10 +6,23 @@ import java.util.List;
 
 import org.antlr.v4.runtime.Token;
 
-import uk.co.farowl.asdl.ASDLParser.*;
+import uk.co.farowl.asdl.ASDLParser.AttributesContext;
+import uk.co.farowl.asdl.ASDLParser.ConstructorContext;
+import uk.co.farowl.asdl.ASDLParser.DefinitionContext;
+import uk.co.farowl.asdl.ASDLParser.FieldContext;
+import uk.co.farowl.asdl.ASDLParser.FieldsContext;
+import uk.co.farowl.asdl.ASDLParser.ModuleContext;
+import uk.co.farowl.asdl.ASDLParser.ProductContext;
+import uk.co.farowl.asdl.ASDLParser.SumContext;
+import uk.co.farowl.asdl.ASDLParser.TypeContext;
 import uk.co.farowl.asdl.ast.AsdlTree;
-import uk.co.farowl.asdl.ast.AsdlTree.*;
-import uk.co.farowl.asdl.ast.AsdlTree.Field.Cardinality;
+import uk.co.farowl.asdl.ast.AsdlTree.Constructor;
+import uk.co.farowl.asdl.ast.AsdlTree.Definition;
+import uk.co.farowl.asdl.ast.AsdlTree.Field;
+import uk.co.farowl.asdl.ast.AsdlTree.Cardinality;
+import uk.co.farowl.asdl.ast.AsdlTree.Module;
+import uk.co.farowl.asdl.ast.AsdlTree.Product;
+import uk.co.farowl.asdl.ast.AsdlTree.Sum;
 
 /**
  * Visitor to the ASDL parse tree that builds and AST representing the user's ASDL. The classes of
@@ -18,7 +31,25 @@ import uk.co.farowl.asdl.ast.AsdlTree.Field.Cardinality;
  * source, and will be used to generate source code implementing the data structures described by
  * the user's source.
  */
-public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
+public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree> {
+
+// /** The source file for which we are building the AST (mostly for error messages). */
+// public final String source;
+
+//    /** The AST we are building. */
+//    private final AsdlTree ast;
+
+// public ASTBuilderParseVisitor(String source) {
+// this.ast = new AsdlTree(source);
+// }
+
+//    public ASTBuilderParseVisitor(ANTLRInputStream input) {
+//        this.ast = new AsdlTree(input);
+//    }
+
+//    public AsdlTree.Module build(ASDLParser.ModuleContext module) {
+//        return visitModule(module);
+//    }
 
     @Override
     public Module visitModule(ModuleContext ctx) {
@@ -26,7 +57,7 @@ public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
         for (DefinitionContext def : ctx.definition()) {
             defs.add(visitDefinition(def));
         }
-        return new Module(ctx.id().getText(), defs);
+        return new Module(ctx, defs);
     }
 
     /**
@@ -42,18 +73,17 @@ public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
      */
     @Override
     public Definition visitDefinition(DefinitionContext ctx) {
+
         List<Constructor> constructors;
         TypeContext typeContext = ctx.type();
         List<Field> attributes;
         ProductContext prod = typeContext.product();
         if (prod != null) {
-            // Product type: represent as a single constructor node
+            // Product type: get the fields of the product
             List<Field> members = getFieldList(prod.fields());
-            Constructor c = new Constructor("", members);
-            constructors = Collections.singletonList(c);
             // Check for attributes on this product
             attributes = getFieldList(prod.attributes());
-            return new Product(ctx.TypeId().getText(), members, attributes);
+            return new Product(ctx, members, attributes);
         } else {
             // Sum type: there will be a list of constructors
             constructors = new LinkedList<>();
@@ -64,16 +94,15 @@ public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
             }
             // If there is a list of attributes, visit them as Field nodes
             attributes = getFieldList(sum.attributes());
-            return new Sum(ctx.TypeId().getText(), constructors, attributes);
+            return new Sum(ctx, constructors, attributes);
         }
     }
 
     /** constructor : ConstructorId fields? ; */
     @Override
     public Constructor visitConstructor(ConstructorContext ctx) {
-        String name = ctx.ConstructorId().getText();
         List<Field> members = getFieldList(ctx.fields());
-        return new Constructor(name, members);
+        return new Constructor(ctx, members);
     }
 
     /** Visit the fields of the given AttributesContext and list them. */
@@ -98,11 +127,8 @@ public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
     /** field : TypeId cardinality=('?' | '*')? id? ; */
     @Override
     public Field visitField(FieldContext ctx) {
-        String typeName = ctx.TypeId().getText();
         Cardinality cardinality = getCardinality(ctx);
-        IdContext id = ctx.id();
-        String name = (id == null) ? null : id.getText();
-        return new Field(typeName, cardinality, name);
+        return new Field(ctx, cardinality);
     }
 
     /** Extract the cardinality of the given field as an enum type. */
@@ -118,7 +144,7 @@ public class ASTBuilderParseVisitor extends ASDLBaseVisitor<AsdlTree.Node> {
     }
 }
 
-//
+// A reminder of the grammar
 //
 // module : Module id '{' definition* '}' ;
 // definition : TypeId '=' type ;

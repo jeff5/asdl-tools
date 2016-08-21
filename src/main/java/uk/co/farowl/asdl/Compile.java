@@ -1,6 +1,7 @@
 package uk.co.farowl.asdl;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -16,6 +17,8 @@ import org.stringtemplate.v4.STGroupFile;
 
 import uk.co.farowl.asdl.ASDLParser.ModuleContext;
 import uk.co.farowl.asdl.ast.AsdlTree;
+import uk.co.farowl.asdl.ast.DefaultErrorHandler;
+import uk.co.farowl.asdl.ast.ErrorHandler;
 import uk.co.farowl.asdl.code.CodeTree;
 import uk.co.farowl.asdl.code.CodeTree.Product;
 import uk.co.farowl.asdl.code.Scope;
@@ -37,9 +40,11 @@ public class Compile {
      * At present, this just dumps the parse tree.
      *
      * @param args
+     * @throws FileNotFoundException
      * @throws IOException
+     * @throws ASDLErrors
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws FileNotFoundException, IOException {
 
         // Parse the command line
         Compile.Options options = new Compile.Options(args);
@@ -56,39 +61,59 @@ public class Compile {
 
         } else {
             // Options ok apparently. Let's get on with it.
-            InputStream inputStream = new FileInputStream(options.inputName);
-            ANTLRInputStream input = new ANTLRInputStream(inputStream);
-
-            Compile compiler = new Compile(options, input);
-            compiler.buildParseTree();
-            inputStream.close();
-
-            compiler.buildAST();
-            if (options.dumpASDL) {
-                System.out.println(compiler.emitASDL());
-            }
-
-            compiler.buildCodeTree();
-
-            // Output generated code as specified (possibly to stdout)
-            PrintStream outputStream = System.out;
-            if (options.outputName != null) {
-                outputStream = new PrintStream(options.outputName);
-            }
-            if (options.outputType == OutputType.JAVA) {
-                outputStream.println(compiler.emitJava());
-            }
-            if (outputStream != System.out) {
-                outputStream.close();
+            try {
+                compileMain(options);
+            } catch (ASDLErrors se) {
+                System.err.println(se);
             }
         }
     }
 
-    private enum OutputType {
-        NONE, JAVA
+    /**
+     * Implements the main action of the compiler once it is known there is no error, and we're
+     * actually going to compile some source.
+     *
+     * @param options
+     * @throws IOException
+     * @throws ASDLErrors
+     * @throws FileNotFoundException
+     */
+    private static void compileMain(Compile.Options options)
+            throws IOException, ASDLErrors, FileNotFoundException {
+        Compile compiler;
+        try (InputStream inputStream = new FileInputStream(options.inputName)) {
+            ANTLRInputStream input = new ANTLRInputStream(inputStream);
+            input.name = options.inputName;
+            compiler = new Compile(options, input);
+            compiler.buildParseTree();
+
+            // From the parse tree build an AST
+            compiler.buildAST();
+
+            // We can play back the ASDL from the AST
+            if (options.dumpASDL) {
+                System.out.println(compiler.emitASDL());
+            }
+
+            // From the AST tree build an tree representing generated code (language neutral)
+            compiler.buildCodeTree();
+
+            // Output generated code as specified (possibly to System.out)
+            if (options.outputName == null) {
+                compiler.emit(System.out);
+            } else {
+                try (PrintStream outputStream = new PrintStream(options.outputName)) {
+                    compiler.emit(outputStream);
+                }
+            }
+        }
     }
 
     private static class Options {
+
+        private enum OutputType {
+            NONE, JAVA
+        }
 
         /** If not null, there was an error and this is the description. */
         String commandLineError;
@@ -181,12 +206,48 @@ public class Compile {
         }
     }
 
+    /** Exception base class representing a compilation error, during the use of this compiler. */
+    public abstract class Error extends Exception {
+
+        public Error(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        /** Get the name of the source file. */
+        public String getSourceName() {
+            return options.inputName;
+        }
+    }
+
+    /**
+     * Thrown once by the parsing phase if there are any syntax errors. Each error is reported by
+     * the parser on <code>System.err</code>.
+     */
+    public class ASDLErrors extends Exception {
+
+        protected final int errors;
+        protected final String kind;
+
+        public ASDLErrors(String kind, int numberOfErrors) {
+            this.kind = kind;
+            this.errors = numberOfErrors;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s errors (%d) in: %s", kind, errors, options.inputName);
+        }
+    }
+
     Options options;
     ANTLRInputStream input;
     ModuleContext parseTree;
-    AsdlTree ast;
+    AsdlTree.Module ast;
     CodeTree.Module globalModule;
     CodeTree code;
+
+    /** Called whenever there is a semantic error in processing the AST. */
+    final ErrorHandler errorHandler = new DefaultErrorHandler();
 
     /**
      * Create a compiler attached to the given source stream. This source must represent one
@@ -203,11 +264,15 @@ public class Compile {
     }
 
     /**
-     * Compile the source (actually an ANTLR input stream) into a new parse tree.
+     * Compile the source (actually an ANTLR input stream) into a new parse tree. The parser emits
+     * parse errors to <code>System.err</code>, but generally recovers to continue the parse. Errors
+     * are counted, and if the count is positive, this method will throw
+     * {@link ASDLException.SyntaxErrors}.
      *
      * @throws IOException from reading the input
+     * @throws ASDLErrors when syntax errors
      */
-    public void buildParseTree() throws IOException {
+    public void buildParseTree() throws IOException, ASDLErrors {
 
         // Wrap the input in a Lexer
         ASDLLexer lexer = new ASDLLexer(input);
@@ -218,6 +283,10 @@ public class Compile {
         parseTree = parser.module();
 
         // System.out.println(parseTree.toStringTree(parser));
+        int errors = parser.getNumberOfSyntaxErrors();
+        if (errors > 0) {
+            throw new ASDLErrors("Syntax", errors);
+        }
     }
 
     /**
@@ -228,20 +297,21 @@ public class Compile {
         if (parseTree == null) {
             throw new java.lang.IllegalStateException("No source has been parsed");
         }
-        ast = new AsdlTree(parseTree);
-        // System.out.println(ast.root.toString());
+        ast = AsdlTree.forModule(parseTree);
+        // System.out.println(ast.toString());
     }
 
     /** Emit reconstructed source from enclosed AST using StringTemplate */
     public String emitASDL() {
-        return emitASDL(ast.root);
+        return emitASDL(ast);
     }
 
     /**
      * Build an AST from the source already parsed by
      * {@link #buildParseTree(ANTLRInputStream, String)}.
+     * @throws ASDLErrors
      */
-    public void buildCodeTree() {
+    public void buildCodeTree() throws ASDLErrors {
         if (ast == null) {
             throw new java.lang.IllegalStateException("No AST has been built");
         }
@@ -256,8 +326,13 @@ public class Compile {
         }
 
         // Compile the code tree from the AST
-        code = new CodeTree(globalTypes, ast);
+        code = new CodeTree(globalTypes, ast, errorHandler);
         // System.out.println(code.root.toString());
+
+        int errors = errorHandler.getNumberOfErrors();
+        if (errors > 0) {
+            throw new ASDLErrors("Semantic", errors);
+        }
     }
 
     private static List<String> asdlTypes =
@@ -266,7 +341,18 @@ public class Compile {
     /** Declare a built-in type as a Definition in {@link #globalModule}. */
     private void defineGlobal(String typeName) {
         CodeTree.Definition def = new Product(typeName, globalModule, 0, 0);
-        globalModule.scope.define(typeName, def);
+        globalModule.scope.defineOrNull(typeName, def);
+    }
+
+    /** Output generated code as specified in {@link #options} (possibly to stdout) */
+    public void emit(PrintStream outputStream) {
+        switch (options.outputType) {
+            case JAVA:
+                outputStream.println(emitJava());
+                break;
+            case NONE:
+                break;
+        }
     }
 
     /** Emit Java from enclosed AST using StringTemplate */
@@ -276,13 +362,13 @@ public class Compile {
         ST st = stg.getInstanceOf("ASDFile");
         String toolName = getClass().getSimpleName();
         st.addAggr("command.{tool, file}", toolName, options.inputName);
-        // st.add("mod", ast.root);
+        // st.add("mod", ast);
         st.add("mod", code.root);
         return st.render();
     }
 
     /** Emit reconstructed source from arbitrary sub-tree using StringTemplate */
-    static String emitASDL(AsdlTree.Node node) {
+    static String emitASDL(AsdlTree node) {
         URL url = AsdlTree.class.getResource("ASDL.stg");
         STGroup stg = new STGroupFile(url, "UTF-8", '<', '>');
         ST st = stg.getInstanceOf("emit");

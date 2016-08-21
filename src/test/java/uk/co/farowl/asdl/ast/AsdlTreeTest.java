@@ -124,12 +124,13 @@ public class AsdlTreeTest {
     }
 
     private Module getModule(String source) {
-        return getAST(source).root;
+        return getAST(source);
     }
 
     private ASDLParser getParser(String src) {
         // Wrap the source string in a stream
         ANTLRInputStream input = new ANTLRInputStream(src);
+        input.name = "<test>";
         // Wrap the input in a Lexer
         ASDLLexer lexer = new ASDLLexer(input);
         // Get ready to parse the token stream
@@ -137,9 +138,9 @@ public class AsdlTreeTest {
         return new ASDLParser(tokens);
     }
 
-    private AsdlTree getAST(String source) {
+    private Module getAST(String source) {
         ASDLParser parser = getParser(source);
-        return new AsdlTree(parser.module());
+        return AsdlTree.forModule(parser.module());
     }
 
     /**
@@ -149,7 +150,7 @@ public class AsdlTreeTest {
      * @param nameFn applicable to nodes of type <code>T</code> to extract the name
      * @param names the values expected for those names
      */
-    private <T extends Node> void assertNames(List<T> nodes, Function<T, String> nameFn,
+    private <T extends AsdlTree> void assertNames(List<T> nodes, Function<T, String> nameFn,
             String... names) {
         assertEquals(names.length, nodes.size());
         int i = 0;

@@ -1,9 +1,12 @@
 package uk.co.farowl.asdl.code;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import uk.co.farowl.asdl.ast.AsdlTree;
+import uk.co.farowl.asdl.ast.ErrorHandler;
 import uk.co.farowl.asdl.code.CodeTree.Constructor;
 import uk.co.farowl.asdl.code.CodeTree.Module;
 import uk.co.farowl.asdl.code.CodeTree.Product;
@@ -25,9 +28,10 @@ class SumFieldAdder extends FieldAdder {
      *
      * @param module within which to resolve type names.
      * @param sums to revisit during {@link #addFields()}.
+     * @param handler for semantic errors (e.g. repeat definitions of fields)
      */
-    SumFieldAdder(Module module, Map<AsdlTree.Sum, Sum> sums) {
-        super(module);
+    SumFieldAdder(Module module, Map<AsdlTree.Sum, Sum> sums, ErrorHandler handler) {
+        super(module, handler);
         this.sums = sums;
     }
 
@@ -54,10 +58,15 @@ class SumFieldAdder extends FieldAdder {
         for (AsdlTree.Field a : sum.attributes) {
             currentSum.attributes[attributeIndex++] = visitField(a);
         }
-        // Iterate over the constructors adding them as fields to the target Sum
+        // Iterate over the constructors adding them to the target Sum
         int constructorIndex = 0;
+        Set<String> names = new HashSet<>();
         for (AsdlTree.Constructor c : sum.constructors) {
-            currentSum.constructors[constructorIndex++] = visitConstructor(c);
+            Constructor con = visitConstructor(c);
+            if (!names.add(c.name)) {
+                errorHandler.report(c.new Duplicate("constructor", c.name));
+            }
+            currentSum.constructors[constructorIndex++] = con;
         }
         return currentSum;
     }

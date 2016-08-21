@@ -51,18 +51,17 @@ public class Scope<T> {
         }
 
         /**
-         * Define this <code>Symbol</code>.
+         * Define this <code>Symbol</code> and return it. Return <code>null</code> if already defined.
          *
          * @param definition the new definition
          * @return this <code>Symbol</code> (for convenience chaining calls, etc.)
-         * @throws IllegalStateException if already defined
          */
-        private Symbol define(T definition) throws IllegalStateException {
+        private Symbol defineOrNull(T definition) {
             if (def == null) {
                 def = definition;
                 return this;
             } else {
-                throw new IllegalStateException("Attempt to re-redefine symbol " + name);
+                return null;
             }
         }
 
@@ -91,19 +90,20 @@ public class Scope<T> {
     }
 
     /**
-     * Give the <code>Symbol</code>, which may be new or exist undefined in this <code>Scope</code>,
-     * named a definition.
+     * Give the <code>Symbol</code> named a definition. The symbol may be new or exist undefined in
+     * this <code>Scope</code>. If it exists and is already defined in this scope, return
+     * <code>null</code>.
      *
      * @param name of the <code>Symbol</code> to define in this scope
      * @param definition the new definition
      * @return the <code>Symbol</code> just defined
      * @throws IllegalStateException if already defined
      */
-    public Symbol define(String name, T definition) throws IllegalStateException {
+    public Symbol defineOrNull(String name, T definition) throws IllegalStateException {
         Symbol s = table.get(name);
         if (s != null) {
             // Already in the table: give it a value (which is an error if already defined).
-            return s.define(definition);
+            return s.defineOrNull(definition);
         } else {
             // Not in the table: we may safely define it.
             s = new Symbol(name, definition);
@@ -121,12 +121,12 @@ public class Scope<T> {
      * @param name to look up
      * @return Symbol found, or null in not found
      */
-    public Symbol resolve(String name) {
+    public Symbol resolveOrNull(String name) {
         Symbol s = table.get(name);
         if (s != null) {
             return s;
         } else if (enclosingScope != null) {
-            return enclosingScope.resolve(name);
+            return enclosingScope.resolveOrNull(name);
         } else {
             return null;
         }
@@ -141,7 +141,7 @@ public class Scope<T> {
      * @return Symbol found, or null in not found
      */
     public T definition(String name) {
-        Symbol s = resolve(name);
+        Symbol s = resolveOrNull(name);
         return s != null ? s.def : null;
     }
 }

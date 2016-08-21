@@ -5,7 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import uk.co.farowl.asdl.ast.AsdlTree;
-import uk.co.farowl.asdl.ast.AsdlTree.Field.Cardinality;
+import uk.co.farowl.asdl.ast.AsdlTree.Cardinality;
+import uk.co.farowl.asdl.ast.ErrorHandler;
 
 /**
  * This class defines an abstract syntax tree for ASDL compiled to a particular target language, and
@@ -23,19 +24,19 @@ public class CodeTree {
     public final Module root;
 
     /** Construct the AST from the result of parsing an ASDL module. */
-    public CodeTree(Scope<Definition> scope, AsdlTree tree) {
+    public CodeTree(Scope<Definition> scope, AsdlTree.Module tree, ErrorHandler errorHandler) {
 
         // Ensure the module has all its definitions, but without the fields.
-        DefinitionBuilder definitionBuilder = new DefinitionBuilder(scope);
-        root = definitionBuilder.buildModule(tree.root);
+        DefinitionBuilder definitionBuilder = new DefinitionBuilder(scope, errorHandler);
+        root = definitionBuilder.buildModule(tree);
 
         // Visit the definitions to add the fields, now referring to the definition of their types.
         ProductFieldAdder productFieldAdder =
-                new ProductFieldAdder(root, definitionBuilder.products);
+                new ProductFieldAdder(root, definitionBuilder.products, errorHandler);
         productFieldAdder.addFields();
 
         // Visit the definitions to add the fields, now referring to the definition of their types.
-        SumFieldAdder sumFieldAdder = new SumFieldAdder(root, definitionBuilder.sums);
+        SumFieldAdder sumFieldAdder = new SumFieldAdder(root, definitionBuilder.sums, errorHandler);
         sumFieldAdder.addFields();
     }
 

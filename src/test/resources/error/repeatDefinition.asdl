@@ -1,0 +1,14 @@
+module repeatDefinition {
+    typea   = (int x, int* y) attributes (string*dummy)
+    typeb   = A | B
+    typea   = Test1(typea x, typeb x)
+            | Test2(typea z)
+            attributes(string w)
+    s1      = Test1 | Test2 | Test3 | Test1 | Test5
+    s2      = Test1(int* a, int b, identifier a)
+            | Test2(typea* a, typeb? b, typea a, typeb a)
+            | Test1
+    s3      = T1(int f, int* g, string h)
+            | T2(int h)
+            attributes(typea a, typeb g)
+}
