@@ -24,20 +24,22 @@ import uk.co.farowl.asdl.code.CodeTree.Product;
 import uk.co.farowl.asdl.code.Scope;
 
 /**
- * A compiler for ASDL that may be invoked at at the command prompt.
+ * A compiler for ASDL that may be invoked at at the command prompt, and its main program. An
+ * instance of <code>Compile</code> holds the options that configure it, and the data structures
+ * that are the intermediate products of compilation. The phases of compilation are orchestrated by
+ * calls from the the client to methods on the <code>Compile</code> object.
+ *
  */
 public class Compile {
 
-    // TODO JUnit tests
+    // TODO More JUnit tests
 
     /**
-     * Program that may be invoked as:
+     * Main program. For usage instructions invoke as:
      *
      * <pre>
-     * java -cp ... uk.co.farowl.asdl.Compile filename
+     * java -cp ... uk.co.farowl.asdl.Compile -h
      *</pre>
-     *
-     * At present, this just dumps the parse tree.
      *
      * @param args
      * @throws FileNotFoundException
@@ -63,15 +65,15 @@ public class Compile {
             // Options ok apparently. Let's get on with it.
             try {
                 compileMain(options);
-            } catch (ASDLErrors se) {
-                System.err.println(se);
+            } catch (Exception se) {
+                System.err.println("Error: " + se);
             }
         }
     }
 
     /**
      * Implements the main action of the compiler once it is known there is no error, and we're
-     * actually going to compile some source.
+     * actually going to compile some source (not just print the usage message).
      *
      * @param options
      * @throws IOException
@@ -111,17 +113,28 @@ public class Compile {
 
     private static class Options {
 
-        private enum OutputType {
-            NONE, JAVA
+        private enum TemplateLocation {
+            NONE, RESOURCE, FILE
         }
 
         /** If not null, there was an error and this is the description. */
         String commandLineError;
+        /** -h present: give usage/help message. Also set on detection of usage errors. */
         boolean giveHelp;
+        /** -g present: give usage/help message. Also set on detection of usage errors. */
+        boolean groupFileSpecified;
+        /** Name of the input file to read. */
         String inputName;
-        OutputType outputType = OutputType.NONE;
+        /** -a flag present: dump (to console) ASDL equivalent to the input. */
         private boolean dumpASDL;
+        /** Name of the output file to write. */
         String outputName;
+        /** Define how to look for the templates group file. */
+        TemplateLocation templatePath = TemplateLocation.RESOURCE;
+        /** Name of the StringTemplate group file to use. */
+        String groupfileName = "Java";
+        /** Name of the template file to use. */
+        String templateName = "main";
 
         /** Construct from command-line arguments. */
         Options(String[] args) {
@@ -134,8 +147,9 @@ public class Compile {
          * @return true iff the program should run the compiler. (False=give help instead.)
          */
         private void parseCommand(String[] args) {
-            int files = 0;
-            argloop : for (String arg : args) {
+            int files = 0, argp = 0;
+            argloop : while (argp < args.length) {
+                String arg = args[argp++];
                 if (arg.length() >= 2 && arg.charAt(0) == '-') {
                     // It's a switch
                     switch (arg) {
@@ -145,8 +159,27 @@ public class Compile {
                         case "-a":
                             dumpASDL = true;
                             break;
-                        case "-j":
-                            outputType = OutputType.JAVA;
+                        case "-r":
+                            if (argp < args.length) {
+                                groupfileName = args[argp++];
+                            } else {
+                                setError(arg + " missing resource name");
+                            }
+                            break;
+                        case "-g":
+                            groupFileSpecified = true;
+                            if (argp < args.length) {
+                                groupfileName = args[argp++];
+                            } else {
+                                setError(arg + " missing group file name");
+                            }
+                            break;
+                        case "-t":
+                            if (argp < args.length) {
+                                templateName = args[argp++];
+                            } else {
+                                setError(arg + " missing template name");
+                            }
                             break;
                         default:
                             setError("Unknown option: " + arg);
@@ -168,19 +201,33 @@ public class Compile {
                 }
             }
 
+            // Constraints implied by options
+
+            if (giveHelp || dumpASDL) {
+                // Cancel code generation
+                templatePath = TemplateLocation.NONE;
+            } else if (groupFileSpecified) {
+                // Switch to interpreting group file as file path
+                templatePath = TemplateLocation.FILE;
+            }
+
             // Consistency checks
-            if (outputType == OutputType.NONE && outputName != null) {
-                setError("Cannot specify <outfile> when not generating code");
-            }
 
-            if (outputType == OutputType.NONE && !giveHelp && !dumpASDL) {
-                setError("No actions specified");
+            if (templatePath != TemplateLocation.NONE) {
+                // Options imply some code generation to do
+                if (inputName == null) {
+                    setError("Must specify <infile> when generating code.");
+                }
+            } else {
+                // Options imply we are not generating code
+                if (dumpASDL) {
+                    if (inputName == null) {
+                        setError("Must specify <infile> when dumping ASDL.");
+                    }
+                } else if (inputName == null) {
+                    setError("Cannot specify <infile> when not generating code.");
+                }
             }
-
-            if (inputName == null && !giveHelp) {
-                setError("Must specify <infile> when generating code");
-            }
-
             // If there was an error, give help unasked.
             giveHelp |= error();
         }
@@ -199,23 +246,15 @@ public class Compile {
 
         void giveHelp() {
             System.out.println("Arguments:");
-            System.out.println(" ...    -ahj <infile> <outfile>");
+            System.out.println(" ...  -ah [-g <groupfile> | -r <resource>] [-t <template>]"
+                    + "  <infile> <outfile>");
             System.out.println("-a  Output ASDL equivalent to <infile> to stdout");
             System.out.println("-h  Output this help and stop");
-            System.out.println("-j  Output Java to <outfile>");
-        }
-    }
-
-    /** Exception base class representing a compilation error, during the use of this compiler. */
-    public abstract class Error extends Exception {
-
-        public Error(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        /** Get the name of the source file. */
-        public String getSourceName() {
-            return options.inputName;
+            System.out.println("-g  Generate <outfile> using StringTemplate <groupfile>");
+            System.out.println("-r  Generate <outfile> using internal StringTemplate <resource>");
+            System.out.println("-t  Generate <outfile> using template named <template>");
+            System.out.println("By default resource=Java and template=main."
+                    + "Options -a and -h cancel code generation.");
         }
     }
 
@@ -345,26 +384,50 @@ public class Compile {
         globalModule.scope.defineOrNull(typeName, def);
     }
 
-    /** Output generated code as specified in {@link #options} (possibly to stdout) */
-    public void emit(PrintStream outputStream) {
-        switch (options.outputType) {
-            case JAVA:
-                outputStream.println(emitJava());
+    /**
+     * Output generated code as specified in {@link #options} (possibly to stdout)
+     *
+     * @throws FileNotFoundException
+     */
+    public void emit(PrintStream outputStream) throws FileNotFoundException {
+        STGroup stg;
+        switch (options.templatePath) {
+            case RESOURCE:
+                String name = options.groupfileName + ".stg";
+                URL url = AsdlTree.class.getResource(name);
+                if (url == null) {
+                    throw new java.io.FileNotFoundException(name);
+                }
+                stg = new STGroupFile(url, "UTF-8", '<', '>');
+                outputStream.println(emitFromStringTemplate(stg));
+                break;
+            case FILE:
+                stg = new STGroupFile(options.groupfileName);
+                outputStream.println(emitFromStringTemplate(stg));
                 break;
             case NONE:
                 break;
         }
     }
 
-    /** Emit Java from enclosed AST using StringTemplate */
-    public String emitJava() {
-        URL url = AsdlTree.class.getResource("Java.stg");
-        STGroup stg = new STGroupFile(url, "UTF-8", '<', '>');
-        ST st = stg.getInstanceOf("ASDFile");
+    /**
+     * Emit enclosed AST using a StringTemplate group and the template named in the options. When
+     * the template is invoked, the symbols <code>command</code> and <code>asdlCodeRoot</code> will
+     * have been defined. <code>command</code> is an aggregate object (see StringTemplate.addAggr),
+     * with elements <code>tool</code>, <code>file</code>, <code>groupfile</code>,
+     * <code>template</code> intended primarily to generate a header describing how the output was
+     * generated. <code>asdlCodeRoot</code> is an object of type {@link CodeTree.Module} that gives
+     * access to the translated source ASDL.
+     */
+    public String emitFromStringTemplate(STGroup stg) {
+        ST st = stg.getInstanceOf(options.templateName);
+        if (st == null) {
+            throw new IllegalArgumentException("Template not found: " + options.templateName);
+        }
         String toolName = getClass().getSimpleName();
-        st.addAggr("command.{tool, file}", toolName, options.inputName);
-        // st.add("mod", ast);
-        st.add("mod", code.root);
+        st.addAggr("command.{tool, file, groupfile, template}", toolName, options.inputName,
+                options.groupfileName, options.templateName);
+        st.add("asdlCodeRoot", code.root);
         return st.render();
     }
 
