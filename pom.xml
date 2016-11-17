@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>uk.co.farowl.asdl</groupId>
   <artifactId>asdl-tools</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
   <name>ASDL Tools</name>
   <description>Compiler and code generator for a dialect of Abstract Syntax Description Language</description>
   <properties>

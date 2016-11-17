@@ -49,16 +49,14 @@ class ProductFieldAdder extends FieldAdder {
         // Collect attribute names and check for duplicates
         setAttributeNames(product.attributes);
         // Iterate over the attributes adding them as fields to the target Product
-        int attributeIndex = 0;
         for (AsdlTree.Field a : product.attributes) {
-            currentProduct.attributes[attributeIndex++] = visitField(a);
+            currentProduct.attributes.add(visitField(a));
         }
         // Iterate over the members adding them as fields to the target Product
-        int memberIndex = 0;
         memberNames.clear();
         for (AsdlTree.Field m : product.members) {
             checkMemberName(m);
-            currentProduct.members[memberIndex++] = visitField(m);
+            currentProduct.members.add(visitField(m));
         }
         return currentProduct;
     }

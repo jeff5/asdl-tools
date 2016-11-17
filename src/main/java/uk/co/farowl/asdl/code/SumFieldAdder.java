@@ -56,19 +56,17 @@ class SumFieldAdder extends FieldAdder {
         // Collect attribute names and check for duplicates
         setAttributeNames(sum.attributes);
         // Iterate over the attributes adding them as fields to the target Sum
-        int attributeIndex = 0;
         for (AsdlTree.Field a : sum.attributes) {
-            currentSum.attributes[attributeIndex++] = visitField(a);
+            currentSum.attributes.add(visitField(a));
         }
         // Iterate over the constructors adding them to the target Sum
-        int constructorIndex = 0;
         // Check for duplicate constructors using a simple set
         Set<String> names = new HashSet<>();
         for (AsdlTree.Constructor c : sum.constructors) {
             if (!names.add(c.name)) {
                 errorHandler.report(c.new Duplicate("constructor", c.name));
             }
-            currentSum.constructors[constructorIndex++] = visitConstructor(c);
+            currentSum.constructors.add(visitConstructor(c));
         }
         return currentSum;
     }
@@ -79,11 +77,10 @@ class SumFieldAdder extends FieldAdder {
         List<AsdlTree.Field> members = constructor.members;
         Constructor con = new Constructor(constructor.name, members.size());
         // Iterate over the members adding them as fields to the target Constructor
-        int memberIndex = 0;
         memberNames.clear();
         for (AsdlTree.Field m : members) {
             checkMemberName(m);
-            con.members[memberIndex++] = visitField(m);
+            con.members.add(visitField(m));
         }
         return con;
     }

@@ -1,7 +1,6 @@
 package uk.co.farowl.asdl.code;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import uk.co.farowl.asdl.ast.AsdlTree;
@@ -133,7 +132,7 @@ public class CodeTree {
         /** The {@link Module} in which this was defined. */
         public final Module module;
         /** Attributes stored on an instance of the type (common across constructors of a sum). */
-        public final Field[] attributes;
+        public final List<Field> attributes;
 
         /**
          * Create a <code>Definition</code>: the attributes are filled later.
@@ -145,7 +144,7 @@ public class CodeTree {
         public Definition(String name, Module module, int attributeCount) {
             this.name = new Name(name);
             this.module = module;
-            this.attributes = new Field[attributeCount];
+            this.attributes = new ArrayList<>(attributeCount);
         }
 
         public boolean isSum() {
@@ -156,7 +155,7 @@ public class CodeTree {
     /** Class representing one sum-type definition. */
     public static class Sum extends Definition {
 
-        public final Constructor[] constructors;
+        public final List<Constructor> constructors;
 
         /**
          * Create a <code>Sum</code> definition: the constructors and attributes are filled later.
@@ -168,7 +167,7 @@ public class CodeTree {
          */
         public Sum(String name, Module module, int constructorCount, int attributeCount) {
             super(name, module, attributeCount);
-            this.constructors = new Constructor[constructorCount];
+            this.constructors = new ArrayList<>(constructorCount);
         }
 
         @Override
@@ -178,11 +177,11 @@ public class CodeTree {
 
         /** A sum is simple if it has no members or attributes. */
         public boolean isSimple() {
-            if (attributes.length > 0) {
+            if (attributes.size() > 0) {
                 return false;
             }
             for (Constructor c : constructors) {
-                if (c.members.length > 0) {
+                if (c.members.size() > 0) {
                     return false;
                 }
             }
@@ -192,8 +191,7 @@ public class CodeTree {
         @Override
         public String toString() {
             String fmt = "%s(%s, attr=%s)";
-            return String.format(fmt, name, Arrays.toString(constructors),
-                    Arrays.toString(attributes));
+            return String.format(fmt, name, constructors, attributes);
         }
     }
 
@@ -203,7 +201,7 @@ public class CodeTree {
      */
     public static class Product extends Definition {
 
-        public final Field[] members;
+        public final List<Field> members;
 
         /**
          * Create a <code>Product</code> definition: the members and attributes are filled later.
@@ -215,7 +213,7 @@ public class CodeTree {
          */
         public Product(String name, Module module, int memberCount, int attributeCount) {
             super(name, module, attributeCount);
-            this.members = new Field[memberCount];
+            this.members = new ArrayList<>(memberCount);
         }
 
         @Override
@@ -226,14 +224,14 @@ public class CodeTree {
         @Override
         public String toString() {
             String fmt = "%s(%s, attr=%s)";
-            return String.format(fmt, name, Arrays.toString(members), Arrays.toString(attributes));
+            return String.format(fmt, name, members, attributes);
         }
     }
 
     public static class Constructor implements Node {
 
         public final Name name;
-        public final Field[] members;
+        public final List<Field> members;
 
         /**
          * Create a <code>Constructor</code> clause: the members are filled later.
@@ -243,7 +241,7 @@ public class CodeTree {
          */
         public Constructor(String name, int memberCount) {
             this.name = new Name(name);
-            this.members = new Field[memberCount];
+            this.members = new ArrayList<>(memberCount);
         }
 
         @Override
@@ -253,7 +251,7 @@ public class CodeTree {
 
         @Override
         public String toString() {
-            return name.toString() + Arrays.toString(members);
+            return name.toString() + members.toString();
         }
     }
 
